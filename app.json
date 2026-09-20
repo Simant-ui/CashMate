@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "CashMate",
+    "slug": "cashmate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cashmate.app"
+    },
+    "android": {
+      "package": "com.cashmate.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-sharing"
+    ]
+  }
+}
