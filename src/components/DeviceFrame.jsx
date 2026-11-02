@@ -2,14 +2,12 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useApp } from '../context/AppContext';
-import { Smartphone, Monitor, Sun, Moon, Shield, UserCheck, RefreshCw, KeyRound, Check } from 'lucide-react-native';
+import { Sun, Moon, Shield, RefreshCw, KeyRound, Check, Globe } from 'lucide-react-native';
 
 export const DeviceFrame = ({ children }) => {
   const {
     theme,
     setTheme,
-    deviceFrame,
-    setDeviceFrame,
     userRole,
     setUserRole,
     authScreen,
@@ -19,13 +17,15 @@ export const DeviceFrame = ({ children }) => {
     INITIAL_EXPENSES,
     setSettlements,
     INITIAL_SETTLEMENTS,
+    language,
+    setLanguage,
     colors
   } = useApp();
 
   const handleResetData = () => {
     setExpenses(INITIAL_EXPENSES);
     setSettlements(INITIAL_SETTLEMENTS);
-    showToast('Reset to Kathmandu Boys Room sample data!');
+    showToast(language === 'ne' ? 'काठमाडौँ ब्वाइज रुम नमुना डाटा रिसेट भयो!' : 'Reset to Kathmandu Boys Room sample data!');
   };
 
   return (
@@ -41,6 +41,14 @@ export const DeviceFrame = ({ children }) => {
           </View>
 
           <View style={styles.demoControls}>
+            <TouchableOpacity
+              style={[styles.demoBtn, styles.demoBtnActive]}
+              onPress={() => setLanguage(language === 'en' ? 'ne' : 'en')}
+            >
+              <Globe size={12} color="#ffffff" />
+              <Text style={styles.demoBtnText}>{language === 'ne' ? 'नेपाली' : 'English'}</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.demoBtn, theme === 'light' && styles.demoBtnActive]}
               onPress={() => setTheme('light')}

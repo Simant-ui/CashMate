@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet, Share, KeyboardAvoidingView, Platform } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { Eye, EyeOff, ArrowRight, Smartphone, Mail, Lock, User, Sparkles, Hash, CheckCircle, Copy, Share2, Shield, Users, AlertCircle } from 'lucide-react-native';
+import { Eye, EyeOff, ArrowRight, Smartphone, Mail, Lock, User, Sparkles, Hash, CheckCircle, Copy, Share2, Shield, Users, AlertCircle, KeyRound, RefreshCw, Send, ShieldCheck } from 'lucide-react-native';
 
 export const AuthView = () => {
   const {
@@ -44,6 +44,32 @@ export const AuthView = () => {
   // Join Room State
   const [inputRoomCode, setInputRoomCode] = useState('CM-7K4P9X');
   const [codeError, setCodeError] = useState(null);
+
+  // OTP Verification State
+  const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpError, setOtpError] = useState(null);
+  const [otpCountdown, setOtpCountdown] = useState(30);
+
+  useEffect(() => {
+    let timer;
+    if (authScreen === 'verify_otp' && otpCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [authScreen, otpCountdown]);
+
+  const generateAndSendOtp = (email) => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setOtpInput('');
+    setOtpError(null);
+    setOtpCountdown(30);
+    showToast(`📩 Verification code sent to ${email}`);
+    setAuthScreen('verify_otp');
+  };
 
   // Copy Room Code to Clipboard
   const handleCopyCode = (code) => {
@@ -500,14 +526,141 @@ export const AuthView = () => {
     );
   }
 
-  // 7. REGISTER SCREEN
+  // 7. VERIFY OTP SCREEN
+  if (authScreen === 'verify_otp') {
+    const handleVerifyOtpSubmit = () => {
+      setOtpError(null);
+      if (!otpInput.trim()) {
+        setOtpError('Please enter the 6-digit verification code.');
+        return;
+      }
+      if (otpInput.trim() !== generatedOtp) {
+        setOtpError('Invalid verification code. Please check the code and try again.');
+        return;
+      }
+
+      showToast('✓ Email verified successfully!');
+      setAuthScreen('create_room');
+    };
+
+    const handleResendCode = () => {
+      if (otpCountdown > 0) return;
+      generateAndSendOtp(regEmail.trim());
+    };
+
+    return (
+      <ScrollView contentContainerStyle={[styles.scrollContainer, { backgroundColor: colors.bgSurface }]}>
+        <View style={{ marginTop: 10, marginBottom: 20, alignItems: 'center' }}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight, width: 80, height: 80, borderRadius: 40 }]}>
+            <Mail size={38} color={colors.primary} />
+          </View>
+          <Text style={[styles.headerTitle, { color: colors.textMain, textAlign: 'center', marginTop: 12 }]}>Verify Your Email</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted, textAlign: 'center', marginTop: 6, maxWidth: 300 }]}>
+            We have sent a 6-digit verification code to:
+          </Text>
+          <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary, marginTop: 4 }}>{regEmail}</Text>
+        </View>
+
+        {/* SIMULATED EMAIL NOTIFICATION CARD */}
+        <View style={[styles.simulatedEmailBox, { backgroundColor: colors.bgSubtle, borderColor: colors.primary }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <Send size={16} color={colors.primary} />
+            <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Simulated Inbox Notification
+            </Text>
+          </View>
+          <Text style={{ fontSize: 12, color: colors.textMuted }}>Subject: CashMate Account Email Verification Code</Text>
+          <View style={{ marginVertical: 8, padding: 10, backgroundColor: colors.bgCard, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '600' }}>YOUR VERIFICATION CODE IS:</Text>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: colors.primary, letterSpacing: 6, marginVertical: 4 }}>
+              {generatedOtp}
+            </Text>
+            <Text style={{ fontSize: 10, color: colors.textMuted }}>Valid for 10 minutes. Do not share with anyone.</Text>
+          </View>
+        </View>
+
+        {/* OTP INPUT SECTION */}
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: colors.textMain }]}>Enter 6-Digit Code *</Text>
+          <View style={styles.inputWrapper}>
+            <KeyRound size={18} color={colors.textMuted} style={styles.inputIcon} />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: colors.textMain,
+                  borderColor: otpError ? colors.negative : colors.border,
+                  fontSize: 20,
+                  fontWeight: '800',
+                  letterSpacing: 6,
+                  textAlign: 'center'
+                }
+              ]}
+              placeholder="000000"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otpInput}
+              onChangeText={(text) => {
+                setOtpInput(text.replace(/[^0-9]/g, ''));
+                if (otpError) setOtpError(null);
+              }}
+            />
+          </View>
+        </View>
+
+        {otpError && (
+          <View style={[styles.errorBox, { backgroundColor: colors.negativeLight, marginBottom: 14 }]}>
+            <AlertCircle size={16} color={colors.negative} />
+            <Text style={[styles.errorText, { color: colors.negative }]}>{otpError}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 4 }]}
+          onPress={handleVerifyOtpSubmit}
+          activeOpacity={0.7}
+        >
+          <ShieldCheck size={18} color="#ffffff" />
+          <Text style={styles.primaryBtnText}>Verify Email & Continue</Text>
+        </TouchableOpacity>
+
+        {/* RESEND CODE BUTTON WITH COUNTDOWN */}
+        <View style={{ alignItems: 'center', marginTop: 16 }}>
+          <TouchableOpacity
+            style={[styles.secondaryLinkBtn, { paddingHorizontal: 16, backgroundColor: otpCountdown > 0 ? colors.bgSubtle : colors.primaryLight, borderWidth: 1, borderColor: otpCountdown > 0 ? colors.border : colors.primary }]}
+            onPress={handleResendCode}
+            disabled={otpCountdown > 0}
+          >
+            <RefreshCw size={14} color={otpCountdown > 0 ? colors.textMuted : colors.primary} />
+            <Text style={[styles.secondaryLinkText, { color: otpCountdown > 0 ? colors.textMuted : colors.primary }]}>
+              {otpCountdown > 0 ? `Resend Code in ${otpCountdown}s` : 'Resend Verification Code'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.cancelBtn, { marginTop: 16 }]}
+          onPress={() => setAuthScreen('register')}
+        >
+          <Text style={[styles.cancelBtnText, { color: colors.textMuted }]}>← Change Email / Back to Register</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  }
+
+  // 8. REGISTER SCREEN
   if (authScreen === 'register') {
     const handleRegister = () => {
       if (!regName.trim() || !regEmail.trim() || !regPass) {
         showToast('Please fill all required fields.', 'error');
         return;
       }
-      setAuthScreen('create_room');
+      if (!regEmail.includes('@') || !regEmail.includes('.')) {
+        showToast('Please enter a valid email address.', 'error');
+        return;
+      }
+      generateAndSendOtp(regEmail.trim());
     };
 
     return (
@@ -578,7 +731,7 @@ export const AuthView = () => {
           style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 12 }]}
           onPress={handleRegister}
         >
-          <Text style={styles.primaryBtnText}>Continue to Room Setup</Text>
+          <Text style={styles.primaryBtnText}>Send Verification Code</Text>
           <ArrowRight size={18} color="#ffffff" />
         </TouchableOpacity>
 
@@ -870,5 +1023,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     lineHeight: 16
+  },
+  simulatedEmailBox: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginBottom: 20
   }
 });

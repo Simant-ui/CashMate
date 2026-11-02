@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { ArrowRight, Sparkles } from 'lucide-react-native';
+import { Button } from '../components/ui/Button';
+import { ArrowRight, Sparkles, Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 
 export const SettlementsView = () => {
   const {
@@ -12,6 +13,9 @@ export const SettlementsView = () => {
     settlements,
     setSelectedSettleTarget,
     setIsSettleModalOpen,
+    deleteSettlement,
+    language,
+    t,
     colors
   } = useApp();
 
@@ -34,32 +38,46 @@ export const SettlementsView = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View>
-        <Text style={[styles.title, { color: colors.textMain }]}>Settlement Hub</Text>
-        <Text style={[styles.subTitle, { color: colors.textMuted }]}>
-          Optimized debt minimization and payment records
-        </Text>
+      {/* Header with Title and + Record Payment Button */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <Text style={[styles.title, { color: colors.textMain }]}>{t('settlementHubTitle')}</Text>
+          <Text style={[styles.subTitle, { color: colors.textMuted }]}>
+            {t('settlementHubSub')}
+          </Text>
+        </View>
+
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus size={14} color="#ffffff" />}
+          onPress={() => {
+            setSelectedSettleTarget(null);
+            setIsSettleModalOpen(true);
+          }}
+        >
+          {t('recordPaymentBtn')}
+        </Button>
       </View>
 
       {/* Balance Summary Cards */}
       <View style={styles.gridRow}>
         <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>TOTAL OWED</Text>
+          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{t('totalOwedCard')}</Text>
           <Text style={[styles.cardVal, { color: colors.negative }]}>
             Rs. {totalRoomOwe.toLocaleString()}
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>RECEIVABLE</Text>
+          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{t('receivableCard')}</Text>
           <Text style={[styles.cardVal, { color: colors.positive }]}>
             Rs. {totalRoomGet.toLocaleString()}
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>YOUR NET</Text>
+          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{t('yourNetCard')}</Text>
           <Text
             style={[
               styles.cardVal,
@@ -74,14 +92,14 @@ export const SettlementsView = () => {
       {/* Smart Optimization Banner */}
       <View style={[styles.optBanner, { backgroundColor: colors.secondaryLight, borderColor: colors.border }]}>
         <View style={[styles.sparkleCircle, { backgroundColor: colors.primary }]}>
-          <Sparkles size={18} color="#ffffff" />
+          <Sparkles size={16} color="#ffffff" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.optTitle, { color: colors.textMain }]}>
-            Smart Debt Optimization Active
+            {t('smartDebtActiveTitle')}
           </Text>
           <Text style={[styles.optDesc, { color: colors.textMuted }]}>
-            CashMate automatically minimized room debt graph into the fewest possible transactions!
+            {t('smartDebtActiveDesc')}
           </Text>
         </View>
       </View>
@@ -89,7 +107,7 @@ export const SettlementsView = () => {
       {/* WHO OWES WHOM Section */}
       <View>
         <Text style={[styles.sectionTitle, { color: colors.textMain }]}>
-          Who Owes Whom ({optimizedSettlements.length} Instructions)
+          {t('whoOwesWhomTitle', { count: optimizedSettlements.length })}
         </Text>
 
         {optimizedSettlements.length > 0 ? (
@@ -110,20 +128,26 @@ export const SettlementsView = () => {
                     }
                   ]}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={{ fontSize: 16 }}>{fromMem?.avatar || '👤'}</Text>
-                      <Text style={[styles.nameText, { color: colors.textMain }]}>{fromMem?.name}</Text>
+                  {/* Left Side: Payer -> Receiver */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
+                      <Text style={{ fontSize: 15 }}>{fromMem?.avatar || '👤'}</Text>
+                      <Text style={[styles.nameText, { color: colors.textMain }]} numberOfLines={1}>
+                        {fromMem?.name || item.fromName}
+                      </Text>
                     </View>
 
-                    <ArrowRight size={14} color={colors.textMuted} />
+                    <ArrowRight size={13} color={colors.textMuted} />
 
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={{ fontSize: 16 }}>{toMem?.avatar || '👤'}</Text>
-                      <Text style={[styles.nameText, { color: colors.textMain }]}>{toMem?.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
+                      <Text style={{ fontSize: 15 }}>{toMem?.avatar || '👤'}</Text>
+                      <Text style={[styles.nameText, { color: colors.textMain }]} numberOfLines={1}>
+                        {toMem?.name || item.toName}
+                      </Text>
                     </View>
                   </View>
 
+                  {/* Right Side: Amount + Settle Button */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Text style={[styles.amtText, { color: colors.textMain }]}>
                       Rs. {item.amount.toLocaleString()}
@@ -135,8 +159,9 @@ export const SettlementsView = () => {
                         setSelectedSettleTarget(item);
                         setIsSettleModalOpen(true);
                       }}
+                      activeOpacity={0.75}
                     >
-                      <Text style={styles.settleBtnText}>Settle</Text>
+                      <Text style={styles.settleBtnText}>{t('settleBtnText')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -146,8 +171,8 @@ export const SettlementsView = () => {
         ) : (
           <View style={[styles.emptyBox, { backgroundColor: colors.bgSurface }]}>
             <Text style={{ fontSize: 36, marginBottom: 8 }}>🎉</Text>
-            <Text style={[styles.emptyTitle, { color: colors.textMain }]}>Everyone is Currently Balanced!</Text>
-            <Text style={[styles.emptySub, { color: colors.textMuted }]}>No pending room debts to settle.</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textMain }]}>{t('everyoneBalanced')}</Text>
+            <Text style={[styles.emptySub, { color: colors.textMuted }]}>{t('noDebtsPending')}</Text>
           </View>
         )}
       </View>
@@ -155,7 +180,9 @@ export const SettlementsView = () => {
       {/* SETTLEMENT HISTORY Section */}
       <View>
         <View style={styles.historyHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textMain }]}>Settlement History</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMain, marginBottom: 0 }]}>
+            {t('settlementHistoryTitle')}
+          </Text>
 
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {['all', 'settled', 'pending'].map(f => (
@@ -166,6 +193,7 @@ export const SettlementsView = () => {
                   styles.filterPill,
                   { backgroundColor: historyFilter === f ? colors.primary : colors.bgSubtle }
                 ]}
+                activeOpacity={0.7}
               >
                 <Text
                   style={[
@@ -173,7 +201,7 @@ export const SettlementsView = () => {
                     { color: historyFilter === f ? '#ffffff' : colors.textMuted }
                   ]}
                 >
-                  {f}
+                  {f === 'all' ? t('historyFilterAll') : f === 'settled' ? t('historyFilterSettled') : t('historyFilterPending')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -191,22 +219,32 @@ export const SettlementsView = () => {
                   key={stl.id}
                   style={[styles.historyRow, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
                 >
-                  <View>
-                    <Text style={[styles.historyMainText, { color: colors.textMain }]}>
-                      {fromMem?.name} paid {toMem?.name}
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={[styles.historyMainText, { color: colors.textMain }]} numberOfLines={1}>
+                      {fromMem?.name} {language === 'ne' ? '➔' : 'paid'} {toMem?.name}
                     </Text>
                     <Text style={[styles.historySubText, { color: colors.textMuted }]}>
                       {stl.date} • {stl.method} {stl.note ? `• ${stl.note}` : ''}
                     </Text>
                   </View>
 
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.historyAmt, { color: colors.textMain }]}>
-                      Rs. {stl.amount.toLocaleString()}
-                    </Text>
-                    <View style={[styles.statusBadge, { backgroundColor: colors.positiveLight }]}>
-                      <Text style={[styles.statusText, { color: colors.positive }]}>{stl.status}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[styles.historyAmt, { color: colors.textMain }]}>
+                        Rs. {stl.amount.toLocaleString()}
+                      </Text>
+                      <View style={[styles.statusBadge, { backgroundColor: colors.positiveLight }]}>
+                        <Text style={[styles.statusText, { color: colors.positive }]}>{stl.status}</Text>
+                      </View>
                     </View>
+
+                    <TouchableOpacity
+                      style={[styles.deleteStlBtn, { backgroundColor: colors.bgSubtle }]}
+                      onPress={() => deleteSettlement(stl.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Trash2 size={13} color={colors.negative} />
+                    </TouchableOpacity>
                   </View>
                 </View>
               );
@@ -214,7 +252,7 @@ export const SettlementsView = () => {
           </View>
         ) : (
           <Text style={[styles.emptyHistoryText, { color: colors.textMuted }]}>
-            No past settlements recorded under this filter.
+            {t('noPastSettlements')}
           </Text>
         )}
       </View>
@@ -224,15 +262,21 @@ export const SettlementsView = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 20
+    padding: 16,
+    paddingBottom: 110,
+    gap: 16
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800'
   },
   subTitle: {
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 2
   },
   gridRow: {
@@ -247,8 +291,9 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cardLabel: {
-    fontSize: 10,
-    fontWeight: '700'
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5
   },
   cardVal: {
     fontSize: 15,
@@ -256,17 +301,17 @@ const styles = StyleSheet.create({
     marginTop: 4
   },
   optBanner: {
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12
+    gap: 10
   },
   sparkleCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -276,33 +321,37 @@ const styles = StyleSheet.create({
   },
   optDesc: {
     fontSize: 11,
-    marginTop: 2
+    marginTop: 2,
+    lineHeight: 15
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    marginBottom: 12
+    marginBottom: 10
   },
   optRow: {
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
   },
   nameText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700'
   },
   amtText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800'
   },
   settleBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 9999
+    height: 34,
+    minWidth: 70,
+    paddingHorizontal: 12,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   settleBtnText: {
     color: '#ffffff',
@@ -311,11 +360,11 @@ const styles = StyleSheet.create({
   },
   emptyBox: {
     alignItems: 'center',
-    padding: 30,
+    padding: 24,
     borderRadius: 16
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800'
   },
   emptySub: {
@@ -326,12 +375,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 10
   },
   filterPill: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 9999
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   filterPillText: {
     fontSize: 11,
@@ -343,8 +394,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'space-between'
   },
   historyMainText: {
     fontSize: 13,
@@ -355,22 +406,29 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   historyAmt: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800'
   },
   statusBadge: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 9999,
+    paddingVertical: 1,
+    borderRadius: 6,
     marginTop: 2
   },
   statusText: {
     fontSize: 9,
-    fontWeight: '700'
+    fontWeight: '800'
+  },
+  deleteStlBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   emptyHistoryText: {
+    fontSize: 12,
     textAlign: 'center',
-    paddingVertical: 24,
-    fontSize: 13
+    marginVertical: 12
   }
 });

@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView
+} from 'react-native';
 import { useApp } from '../context/AppContext';
-import { X, Check, HandCoins } from 'lucide-react-native';
+import { Button } from '../components/ui/Button';
+import { SwipeBackWrapper } from '../components/SwipeBackWrapper';
+import { X, Check, HandCoins, ArrowRight } from 'lucide-react-native';
 
 export const SettlePaymentModal = () => {
   const {
@@ -13,12 +25,14 @@ export const SettlePaymentModal = () => {
     currentUser,
     recordSettlement,
     showToast,
+    language,
+    t,
     colors
   } = useApp();
 
-  const [fromId, setFromId] = useState(selectedSettleTarget?.fromId || currentUser.id);
-  const [toId, setToId] = useState(selectedSettleTarget?.toId || members.find(m => m.id !== currentUser.id)?.id);
-  const [amount, setAmount] = useState(selectedSettleTarget?.amount ? String(selectedSettleTarget.amount) : '');
+  const [fromId, setFromId] = useState(currentUser.id);
+  const [toId, setToId] = useState(members.find(m => m.id !== currentUser.id)?.id || '');
+  const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('eSewa');
   const [note, setNote] = useState('');
 
@@ -26,61 +40,183 @@ export const SettlePaymentModal = () => {
     if (selectedSettleTarget) {
       setFromId(selectedSettleTarget.fromId);
       setToId(selectedSettleTarget.toId);
-      setAmount(String(selectedSettleTarget.amount));
+      setAmount(String(selectedSettleTarget.amount || ''));
+    } else {
+      setFromId(currentUser.id);
+      setToId(members.find(m => m.id !== currentUser.id)?.id || '');
+      setAmount('');
     }
-  }, [selectedSettleTarget]);
+  }, [selectedSettleTarget, isSettleModalOpen, currentUser.id, members]);
 
   if (!isSettleModalOpen) return null;
 
+  const handleClose = () => {
+    setIsSettleModalOpen(false);
+    setSelectedSettleTarget(null);
+  };
+
   const handleSettleSubmit = () => {
-    if (!amount || Number(amount) <= 0) {
-      showToast('Please enter a valid settlement amount.', 'error');
+    const cleanAmount = parseFloat(String(amount).replace(/,/g, ''));
+    if (!cleanAmount || cleanAmount <= 0 || isNaN(cleanAmount)) {
+      showToast(t('invalidSettleAmount'), 'error');
+      return;
+    }
+
+    if (fromId === toId) {
+      showToast(t('samePayerReceiverError'), 'error');
       return;
     }
 
     recordSettlement({
       fromId,
       toId,
-      amount: Number(amount),
+      amount: cleanAmount,
       method,
-      note
+      note: note.trim()
     });
 
-    setIsSettleModalOpen(false);
-    setSelectedSettleTarget(null);
+    handleClose();
   };
 
   const paymentMethods = [
     { id: 'eSewa', name: 'eSewa', icon: '📱' },
     { id: 'Fonepay', name: 'Fonepay', icon: '💳' },
-    { id: 'Bank Transfer', name: 'Bank Transfer', icon: '🏦' },
-    { id: 'Cash', name: 'Cash', icon: '💵' },
-    { id: 'Other', name: 'Other', icon: '📦' },
+    { id: 'Bank Transfer', name: language === 'ne' ? 'बैंक' : 'Bank', icon: '🏦' },
+    { id: 'Cash', name: language === 'ne' ? 'नगद' : 'Cash', icon: '💵' },
+    { id: 'Other', name: language === 'ne' ? 'अन्य' : 'Other', icon: '📦' },
   ];
 
+  const fromMember = members.find(m => m.id === fromId);
+  const toMember = members.find(m => m.id === toId);
+
   return (
-    <Modal visible={isSettleModalOpen} transparent animationType="slide" onRequestClose={() => setIsSettleModalOpen(false)}>
-      <View style={styles.overlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
+    <Modal visible={isSettleModalOpen} transparent animationType="slide" onRequestClose={handleClose}>
+      <SwipeBackWrapper onSwipeBack={handleClose} style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.overlay}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
+          {/* Header */}
           <View style={styles.modalHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <HandCoins color={colors.primary} size={24} />
-              <Text style={[styles.modalTitle, { color: colors.textMain }]}>Settle Payment</Text>
+              <HandCoins color={colors.primary} size={22} />
+              <View>
+                <Text style={[styles.modalTitle, { color: colors.textMain }]}>
+                  {t('settlePaymentModalTitle')}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                  {t('settleSubTitle')}
+                </Text>
+              </View>
             </View>
 
-            <TouchableOpacity onPress={() => setIsSettleModalOpen(false)}>
-              <X size={22} color={colors.textMuted} />
+            <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
+              <X size={20} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
+            {/* PAYER & RECEIVER VISUAL CARDS */}
+            <View style={[styles.membersBox, { backgroundColor: colors.bgSubtle, borderColor: colors.border }]}>
+              {/* Payer Selector */}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickerRoleLabel, { color: colors.textMuted }]}>
+                  {t('payerLabel').split('*')[0]}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {members.map(m => (
+                      <TouchableOpacity
+                        key={m.id}
+                        onPress={() => setFromId(m.id)}
+                        style={[
+                          styles.memberPill,
+                          fromId === m.id
+                            ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                            : { backgroundColor: colors.bgCard, borderColor: colors.border }
+                        ]}
+                      >
+                        <Text style={{ fontSize: 12 }}>{m.avatar || '👤'}</Text>
+                        <Text
+                          style={[
+                            styles.memberPillText,
+                            { color: fromId === m.id ? '#ffffff' : colors.textMain }
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {m.name.split(' ')[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+
+              {/* Arrow */}
+              <View style={{ paddingHorizontal: 6, paddingTop: 16 }}>
+                <ArrowRight size={16} color={colors.primary} />
+              </View>
+
+              {/* Receiver Selector */}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickerRoleLabel, { color: colors.textMuted }]}>
+                  {t('receiverLabel').split('*')[0]}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {members.map(m => (
+                      <TouchableOpacity
+                        key={m.id}
+                        onPress={() => setToId(m.id)}
+                        style={[
+                          styles.memberPill,
+                          toId === m.id
+                            ? { backgroundColor: colors.secondary, borderColor: colors.secondary }
+                            : { backgroundColor: colors.bgCard, borderColor: colors.border }
+                        ]}
+                      >
+                        <Text style={{ fontSize: 12 }}>{m.avatar || '👤'}</Text>
+                        <Text
+                          style={[
+                            styles.memberPillText,
+                            { color: toId === m.id ? '#ffffff' : colors.textMain }
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {m.name.split(' ')[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Selected Summary Text */}
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+                {fromMember?.name || 'Someone'} ➔ {toMember?.name || 'Someone'}
+              </Text>
+            </View>
+
             {/* Amount Input */}
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textMain }]}>Settlement Amount (NPR)</Text>
+              <Text style={[styles.label, { color: colors.textMain }]}>{t('settlementAmountLabel')}</Text>
               <View style={styles.inputWrapper}>
                 <Text style={[styles.currencyPrefix, { color: colors.primary }]}>Rs.</Text>
                 <TextInput
-                  style={[styles.input, { color: colors.textMain, borderColor: colors.border, paddingLeft: 46, fontSize: 18, fontWeight: '800' }]}
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.textMain,
+                      borderColor: colors.border,
+                      backgroundColor: colors.bgSubtle,
+                      paddingLeft: 46,
+                      fontSize: 18,
+                      fontWeight: '800'
+                    }
+                  ]}
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={colors.textMuted}
@@ -92,7 +228,7 @@ export const SettlePaymentModal = () => {
 
             {/* Payment Method Options */}
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textMain }]}>Payment Method</Text>
+              <Text style={[styles.label, { color: colors.textMain }]}>{t('paymentMethodLabel')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pmRow}>
                 {paymentMethods.map(pm => (
                   <TouchableOpacity
@@ -101,13 +237,21 @@ export const SettlePaymentModal = () => {
                     style={[
                       styles.pmCard,
                       {
-                        backgroundColor: method === pm.id ? colors.primaryLight : colors.bgSurface,
+                        backgroundColor: method === pm.id ? colors.primaryLight : colors.bgSubtle,
                         borderColor: method === pm.id ? colors.primary : colors.border
                       }
                     ]}
+                    activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 14 }}>{pm.icon}</Text>
-                    <Text style={[styles.pmName, { color: colors.textMain }]}>{pm.name}</Text>
+                    <Text style={{ fontSize: 13 }}>{pm.icon}</Text>
+                    <Text
+                      style={[
+                        styles.pmName,
+                        { color: method === pm.id ? colors.primary : colors.textMain }
+                      ]}
+                    >
+                      {pm.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -115,27 +259,45 @@ export const SettlePaymentModal = () => {
 
             {/* Note */}
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textMain }]}>Optional Note / Reference</Text>
+              <Text style={[styles.label, { color: colors.textMain }]}>{t('optionalNoteLabel')}</Text>
               <TextInput
-                style={[styles.input, { color: colors.textMain, borderColor: colors.border }]}
-                placeholder="e.g. eSewa Txn #92837192"
+                style={[
+                  styles.input,
+                  { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }
+                ]}
+                placeholder={t('notePlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 value={note}
                 onChangeText={setNote}
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-              onPress={handleSettleSubmit}
-            >
-              <Text style={styles.submitBtnText}>Mark as Settled</Text>
-              <Check size={18} color="#ffffff" />
-            </TouchableOpacity>
+            {/* Action Buttons: Cancel + Mark as Settled */}
+            <View style={styles.btnRow}>
+              <Button
+                variant="secondary"
+                size="lg"
+                style={{ flex: 1 }}
+                onPress={handleClose}
+              >
+                {t('cancel')}
+              </Button>
+
+              <Button
+                variant="primary"
+                size="lg"
+                style={{ flex: 1.5 }}
+                icon={<Check size={18} color="#ffffff" />}
+                onPress={handleSettleSubmit}
+              >
+                {t('markAsSettledBtn')}
+              </Button>
+            </View>
           </ScrollView>
         </View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </SwipeBackWrapper>
+  </Modal>
   );
 };
 
@@ -148,25 +310,58 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '90%'
+    padding: 20,
+    maxHeight: '92%'
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 14
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800'
   },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  membersBox: {
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8
+  },
+  pickerRoleLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5
+  },
+  memberPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1
+  },
+  memberPillText: {
+    fontSize: 11,
+    fontWeight: '700'
+  },
   formGroup: {
-    marginBottom: 16
+    marginBottom: 14
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     marginBottom: 6
   },
   inputWrapper: {
@@ -183,18 +378,18 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1.5,
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 14
+    height: 46,
+    paddingHorizontal: 14,
+    fontSize: 13
   },
   pmRow: {
     gap: 8,
-    paddingBottom: 4
+    paddingBottom: 2
   },
   pmCard: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1.5,
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,18 +399,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700'
   },
-  submitBtn: {
-    paddingVertical: 14,
-    borderRadius: 9999,
+  btnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 10
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700'
+    gap: 10,
+    marginTop: 8
   }
 });

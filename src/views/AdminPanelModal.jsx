@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Button } from '../components/ui/Button';
+import { SwipeBackWrapper } from '../components/SwipeBackWrapper';
 import { X, Settings, AlertTriangle, Lock, Users, Tag, Sliders, Shield } from 'lucide-react-native';
 
 export const AdminPanelModal = () => {
@@ -20,6 +22,8 @@ export const AdminPanelModal = () => {
     closedMonths,
     closeCurrentMonth,
     showToast,
+    t,
+    getCategoryName,
     colors
   } = useApp();
 
@@ -67,19 +71,27 @@ export const AdminPanelModal = () => {
   return (
     <>
       <Modal visible={Boolean(isAdminPanelOpen)} transparent animationType="slide" onRequestClose={() => setIsAdminPanelOpen(false)}>
-        <View style={styles.overlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
+        <SwipeBackWrapper onSwipeBack={() => setIsAdminPanelOpen(false)} style={{ flex: 1 }}>
+          <View style={styles.overlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
             {/* Header */}
             <View style={styles.modalHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Settings color={colors.primary} size={24} />
-                <View>
-                  <Text style={[styles.modalTitle, { color: colors.textMain }]}>Room Settings & Management</Text>
-                  <Text style={[styles.modalSub, { color: colors.textMuted }]}>Configure room preferences, members, categories & month closing</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
+                <View style={[styles.iconBox, { backgroundColor: colors.primaryLight }]}>
+                  <Settings color={colors.primary} size={20} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.modalTitle, { color: colors.textMain }]} numberOfLines={1}>{t('adminPanel') || 'Room Settings & Management'}</Text>
+                  <Text style={[styles.modalSub, { color: colors.textMuted }]} numberOfLines={1}>Configure preferences, members & month closing</Text>
                 </View>
               </View>
 
-              <TouchableOpacity onPress={() => setIsAdminPanelOpen(false)} activeOpacity={0.7}>
+              <TouchableOpacity
+                onPress={() => setIsAdminPanelOpen(false)}
+                activeOpacity={0.7}
+                style={styles.closeBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <X size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
@@ -97,11 +109,11 @@ export const AdminPanelModal = () => {
             {/* Nav Tabs */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
               {[
-                { id: 'general', label: 'Room Info' },
-                { id: 'members', label: 'Members' },
-                { id: 'categories', label: 'Categories' },
-                { id: 'split', label: 'Split Rules' },
-                { id: 'close_month', label: 'Close Month' },
+                { id: 'general', label: t('roomPreferences') || 'Room Info' },
+                { id: 'members', label: t('members') || 'Members' },
+                { id: 'categories', label: t('allCategories') || 'Categories' },
+                { id: 'split', label: t('split') || 'Split Rules' },
+                { id: 'close_month', label: t('close') + ' Month' },
                 { id: 'danger', label: 'Danger Zone' },
               ].map(tab => (
                 <TouchableOpacity
@@ -111,7 +123,7 @@ export const AdminPanelModal = () => {
                     styles.tabPill,
                     {
                       backgroundColor: activeTab === tab.id ? colors.primary : colors.bgSurface,
-                      borderColor: colors.border
+                      borderColor: activeTab === tab.id ? colors.primary : colors.border
                     }
                   ]}
                   activeOpacity={0.7}
@@ -128,14 +140,14 @@ export const AdminPanelModal = () => {
               ))}
             </ScrollView>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
               {/* TAB 1: General Info */}
               {activeTab === 'general' && (
                 <View>
                   <View style={styles.formGroup}>
-                    <Text style={[styles.label, { color: colors.textMain }]}>Room Name</Text>
+                    <Text style={[styles.label, { color: colors.textMain }]}>{t('roomName') || 'Room Name'}</Text>
                     <TextInput
-                      style={[styles.input, { color: colors.textMain, borderColor: colors.border }]}
+                      style={[styles.input, { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }]}
                       value={roomName}
                       onChangeText={setRoomName}
                       editable={userRole === 'admin'}
@@ -143,9 +155,9 @@ export const AdminPanelModal = () => {
                   </View>
 
                   <View style={styles.formGroup}>
-                    <Text style={[styles.label, { color: colors.textMain }]}>Description</Text>
+                    <Text style={[styles.label, { color: colors.textMain }]}>{t('description') || 'Description'}</Text>
                     <TextInput
-                      style={[styles.input, { color: colors.textMain, borderColor: colors.border }]}
+                      style={[styles.input, { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }]}
                       value={roomDesc}
                       onChangeText={setRoomDesc}
                       editable={userRole === 'admin'}
@@ -153,9 +165,9 @@ export const AdminPanelModal = () => {
                   </View>
 
                   <View style={styles.formGroup}>
-                    <Text style={[styles.label, { color: colors.textMain }]}>Currency Symbol</Text>
+                    <Text style={[styles.label, { color: colors.textMain }]}>{t('currency') || 'Currency Symbol'}</Text>
                     <TextInput
-                      style={[styles.input, { color: colors.textMain, borderColor: colors.border }]}
+                      style={[styles.input, { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }]}
                       value={currency}
                       onChangeText={setCurrency}
                       editable={userRole === 'admin'}
@@ -163,12 +175,12 @@ export const AdminPanelModal = () => {
                   </View>
 
                   {userRole === 'admin' && (
-                    <TouchableOpacity
-                      style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+                    <Button
+                      label={t('save')}
+                      variant="primary"
                       onPress={handleSaveRoomSettings}
-                    >
-                      <Text style={styles.submitBtnText}>Save Changes</Text>
-                    </TouchableOpacity>
+                      style={{ marginTop: 12 }}
+                    />
                   )}
                 </View>
               )}
@@ -187,13 +199,13 @@ export const AdminPanelModal = () => {
                       Closing {currentMonth} will archive all expenses and settlements safely into Month History, and reset active room balances to 0 for next month.
                     </Text>
 
-                    <TouchableOpacity
-                      style={[styles.closeMonthBtn, { backgroundColor: colors.primary }]}
+                    <Button
+                      label={`Close ${currentMonth} & Reset to 0`}
+                      variant="primary"
                       onPress={() => setIsCloseMonthConfirmOpen(true)}
                       disabled={userRole !== 'admin'}
-                    >
-                      <Text style={styles.closeMonthBtnText}>Close {currentMonth} & Reset to 0</Text>
-                    </TouchableOpacity>
+                      style={{ marginTop: 12 }}
+                    />
                   </View>
 
                   {/* Past Archived Months */}
@@ -204,14 +216,14 @@ export const AdminPanelModal = () => {
                     <View style={{ gap: 8 }}>
                       {closedMonths.map(m => (
                         <View key={m.id} style={[styles.rowCard, { backgroundColor: colors.bgSubtle }]}>
-                          <View>
+                          <View style={{ flex: 1 }}>
                             <Text style={[styles.rowMainText, { color: colors.textMain }]}>{m.monthName}</Text>
                             <Text style={[styles.rowSubText, { color: colors.textMuted }]}>
                               Archived on {m.closedDate} • Total Rs. {m.totalExpenses.toLocaleString()}
                             </Text>
                           </View>
-                          <View style={[styles.roleBtn, { backgroundColor: colors.positiveLight }]}>
-                            <Text style={[styles.roleBtnText, { color: colors.positive }]}>Archived</Text>
+                          <View style={[styles.roleBadge, { backgroundColor: colors.positiveLight }]}>
+                            <Text style={[styles.roleBadgeText, { color: colors.positive }]}>Archived</Text>
                           </View>
                         </View>
                       ))}
@@ -225,11 +237,11 @@ export const AdminPanelModal = () => {
                 <View style={{ gap: 10 }}>
                   {members.map(m => (
                     <View key={m.id} style={[styles.rowCard, { backgroundColor: colors.bgSubtle }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={{ fontSize: 18 }}>{m.avatar}</Text>
-                        <View>
-                          <Text style={[styles.rowMainText, { color: colors.textMain }]}>{m.name}</Text>
-                          <Text style={[styles.rowSubText, { color: colors.textMuted }]}>{m.email}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                        <Text style={{ fontSize: 20 }}>{m.avatar}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.rowMainText, { color: colors.textMain }]} numberOfLines={1}>{m.name}</Text>
+                          <Text style={[styles.rowSubText, { color: colors.textMuted }]} numberOfLines={1}>{m.email}</Text>
                         </View>
                       </View>
 
@@ -242,6 +254,7 @@ export const AdminPanelModal = () => {
                             showToast(`Updated ${m.name}'s role to ${newRole}.`);
                           }
                         }}
+                        activeOpacity={0.7}
                       >
                         <Text style={[styles.roleBtnText, { color: colors.primary }]}>{m.role}</Text>
                       </TouchableOpacity>
@@ -254,51 +267,52 @@ export const AdminPanelModal = () => {
               {activeTab === 'categories' && (
                 <View style={{ gap: 10 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={[styles.label, { color: colors.textMain }]}>Expense Categories ({categories.length})</Text>
+                    <Text style={[styles.label, { color: colors.textMain }]}>{t('allCategories')} ({categories.length})</Text>
                     {userRole === 'admin' && (
                       <TouchableOpacity onPress={() => setIsAddCatFormOpen(!isAddCatFormOpen)} activeOpacity={0.7}>
                         <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
-                          {isAddCatFormOpen ? 'Cancel' : '+ Custom Category'}
+                          {isAddCatFormOpen ? t('cancel') : '+ Custom Category'}
                         </Text>
                       </TouchableOpacity>
                     )}
                   </View>
 
                   {isAddCatFormOpen && (
-                    <View style={[styles.rowCard, { backgroundColor: colors.primaryLight, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
-                      <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>Create New Category</Text>
-                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={[styles.addCatBox, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
+                      <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13, marginBottom: 8 }}>Create New Category</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                         <TextInput
-                          style={[styles.input, { flex: 0.2, textAlign: 'center', color: colors.textMain, borderColor: colors.border }]}
+                          style={[styles.input, { flex: 0.25, textAlign: 'center', color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSurface }]}
                           value={newCatIcon}
                           onChangeText={setNewCatIcon}
                         />
                         <TextInput
-                          style={[styles.input, { flex: 0.8, color: colors.textMain, borderColor: colors.border }]}
+                          style={[styles.input, { flex: 0.75, color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSurface }]}
                           placeholder="Category Name (e.g. WiFi Bill)"
                           placeholderTextColor={colors.textMuted}
                           value={newCatName}
                           onChangeText={setNewCatName}
                         />
                       </View>
-                      <TouchableOpacity
-                        style={[styles.submitBtn, { backgroundColor: colors.primary }]}
+                      <Button
+                        label={t('addCategory') || 'Add Category'}
+                        variant="primary"
+                        size="sm"
                         onPress={handleAddCustomCategory}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.submitBtnText}>Add Category</Text>
-                      </TouchableOpacity>
+                      />
                     </View>
                   )}
 
                   {categories.map(cat => (
                     <View key={cat.id} style={[styles.rowCard, { backgroundColor: colors.bgSubtle }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                         <Text style={{ fontSize: 20 }}>{cat.icon}</Text>
-                        <Text style={[styles.rowMainText, { color: colors.textMain }]}>{cat.name}</Text>
+                        <Text style={[styles.rowMainText, { color: colors.textMain }]} numberOfLines={1}>
+                          {getCategoryName ? getCategoryName(cat.name) : cat.name}
+                        </Text>
                       </View>
-                      <View style={[styles.roleBtn, { backgroundColor: colors.positiveLight }]}>
-                        <Text style={[styles.roleBtnText, { color: colors.positive }]}>Active</Text>
+                      <View style={[styles.roleBadge, { backgroundColor: colors.positiveLight }]}>
+                        <Text style={[styles.roleBadgeText, { color: colors.positive }]}>Active</Text>
                       </View>
                     </View>
                   ))}
@@ -311,13 +325,13 @@ export const AdminPanelModal = () => {
                   <Text style={[styles.label, { color: colors.textMain }]}>Default Expense Split Rules</Text>
                   
                   <TouchableOpacity
-                    style={[styles.rowCard, { backgroundColor: colors.primaryLight, borderColor: colors.primary, borderWidth: 1 }]}
+                    style={[styles.splitCard, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
                     onPress={() => showToast('Equal split set as room default.')}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 22 }}>⚖️</Text>
+                    <Text style={{ fontSize: 24 }}>⚖️</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.rowMainText, { color: colors.primary, fontWeight: '700' }]}>Equal Split (Everyone)</Text>
+                      <Text style={[styles.rowMainText, { color: colors.primary, fontWeight: '700' }]}>{t('equalSplit') || 'Equal Split (Everyone)'}</Text>
                       <Text style={[styles.rowSubText, { color: colors.textMuted }]}>
                         Automatically divides all room expenses equally among active members.
                       </Text>
@@ -325,13 +339,13 @@ export const AdminPanelModal = () => {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.rowCard, { backgroundColor: colors.bgSubtle }]}
+                    style={[styles.splitCard, { backgroundColor: colors.bgSubtle, borderColor: colors.border }]}
                     onPress={() => showToast('Custom shares split rule configured.')}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 22 }}>✏️</Text>
+                    <Text style={{ fontSize: 24 }}>✏️</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.rowMainText, { color: colors.textMain }]}>Custom Shares / Fixed Percentages</Text>
+                      <Text style={[styles.rowMainText, { color: colors.textMain }]}>{t('customSplit') || 'Custom Shares / Fixed Percentages'}</Text>
                       <Text style={[styles.rowSubText, { color: colors.textMuted }]}>
                         Allows specifying exact custom rupee shares or fixed percentages per member.
                       </Text>
@@ -346,22 +360,23 @@ export const AdminPanelModal = () => {
                   <View style={[styles.dangerBox, { borderColor: colors.negativeLight, backgroundColor: colors.negativeLight }]}>
                     <Text style={[styles.dangerTitle, { color: colors.negative }]}>Archive Room</Text>
                     <Text style={[styles.dangerDesc, { color: colors.negative }]}>
-                      Hides room from dashboard but preserves expenses.
+                      Hides room from dashboard but preserves expenses and balance records safely.
                     </Text>
-                    <TouchableOpacity
-                      style={[styles.dangerBtn, { borderColor: colors.negative }]}
+                    <Button
+                      label="Archive Room"
+                      variant="danger"
                       onPress={() => setConfirmDangerAction('archive')}
                       disabled={userRole !== 'admin'}
-                    >
-                      <Text style={[styles.dangerBtnText, { color: colors.negative }]}>Archive Room</Text>
-                    </TouchableOpacity>
+                      style={{ marginTop: 8 }}
+                    />
                   </View>
                 </View>
               )}
             </ScrollView>
           </View>
         </View>
-      </Modal>
+      </SwipeBackWrapper>
+    </Modal>
 
       {/* Confirmation Modal for Danger Actions */}
       <ConfirmModal
@@ -414,6 +429,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16
   },
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '800'
@@ -435,14 +464,16 @@ const styles = StyleSheet.create({
     flex: 1
   },
   tabsRow: {
-    gap: 6,
-    paddingBottom: 12
+    gap: 8,
+    paddingBottom: 14
   },
   tabPill: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 9999,
-    borderWidth: 1
+    borderWidth: 1.5,
+    minHeight: 36,
+    justifyContent: 'center'
   },
   tabPillText: {
     fontSize: 12,
@@ -459,29 +490,14 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1.5,
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     fontSize: 14
-  },
-  submitBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 46,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '700'
   },
   closeMonthBox: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    marginBottom: 14
+    borderRadius: 18,
+    borderWidth: 1.5
   },
   closeMonthTitle: {
     fontSize: 15,
@@ -489,44 +505,38 @@ const styles = StyleSheet.create({
   },
   closeMonthDesc: {
     fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 14
-  },
-  closeMonthBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 46,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  closeMonthBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700'
+    lineHeight: 18
   },
   rowCard: {
     padding: 12,
-    minHeight: 48,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    gap: 10
   },
   rowMainText: {
     fontSize: 13,
     fontWeight: '700'
   },
   rowSubText: {
-    fontSize: 11
+    fontSize: 11,
+    marginTop: 2
+  },
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999
+  },
+  roleBadgeText: {
+    fontSize: 10,
+    fontWeight: '700'
   },
   roleBtn: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 9999,
-    minHeight: 28,
-    justifyContent: 'center',
+    minWidth: 64,
     alignItems: 'center'
   },
   roleBtnText: {
@@ -534,32 +544,32 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'capitalize'
   },
-  dangerBox: {
-    padding: 16,
+  addCatBox: {
+    padding: 14,
     borderRadius: 16,
     borderWidth: 1
   },
+  splitCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  dangerBox: {
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1.5
+  },
   dangerTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     marginBottom: 4
   },
   dangerDesc: {
     fontSize: 12,
-    marginBottom: 12
-  },
-  dangerBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    minHeight: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  dangerBtnText: {
-    fontSize: 12,
-    fontWeight: '700'
+    lineHeight: 18,
+    marginBottom: 8
   }
 });

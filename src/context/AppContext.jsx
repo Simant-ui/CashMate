@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
+import { translations } from '../i18n/translations';
+import { getTranslatedCategoryName } from '../i18n/searchHelper';
 
 const AppContext = createContext();
 
@@ -141,6 +143,63 @@ export const INITIAL_SETTLEMENTS = [
   }
 ];
 
+export const INITIAL_INCOME_CATEGORIES = [
+  { id: 'cat-inc-contrib', name: 'Member Contribution', icon: '🤝', accountingTreatment: 'MEMBER_CONTRIBUTION', status: 'ACTIVE' },
+  { id: 'cat-inc-rent', name: 'Rent Collection', icon: '🏠', accountingTreatment: 'ROOM_FUND', status: 'ACTIVE' },
+  { id: 'cat-inc-refund', name: 'Refund Received', icon: '↩️', accountingTreatment: 'EXPENSE_REIMBURSEMENT', status: 'ACTIVE' },
+  { id: 'cat-inc-biz', name: 'Business Income', icon: '💼', accountingTreatment: 'GENERAL_INCOME', status: 'ACTIVE' },
+  { id: 'cat-inc-interest', name: 'Interest Income', icon: '📈', accountingTreatment: 'GENERAL_INCOME', status: 'ACTIVE' },
+  { id: 'cat-inc-other', name: 'Other Income', icon: '💵', accountingTreatment: 'GENERAL_INCOME', status: 'ACTIVE' }
+];
+
+export const INITIAL_INCOMES = [
+  {
+    id: 'inc-1',
+    title: 'September Room Fund Contribution',
+    amount: 40000,
+    categoryId: 'cat-inc-contrib',
+    categoryName: 'Member Contribution',
+    categoryIcon: '🤝',
+    receivedById: 'user-ram',
+    contributedById: 'all',
+    date: '2026-09-01',
+    description: 'Monthly flat contribution collected from room members (Rs. 8,000 each)',
+    accountingTreatment: 'MEMBER_CONTRIBUTION',
+    receiptUrl: null,
+    createdAt: '2026-09-01T10:00:00Z'
+  },
+  {
+    id: 'inc-2',
+    title: 'Water Jar Deposit Refund',
+    amount: 1500,
+    categoryId: 'cat-inc-refund',
+    categoryName: 'Refund Received',
+    categoryIcon: '↩️',
+    receivedById: 'user-hari',
+    contributedById: null,
+    date: '2026-09-06',
+    description: 'Water supplier returned deposit for 3 empty jars',
+    accountingTreatment: 'EXPENSE_REIMBURSEMENT',
+    receiptUrl: null,
+    createdAt: '2026-09-06T12:00:00Z'
+  },
+  {
+    id: 'inc-3',
+    title: 'Study Room Sublease Rent',
+    amount: 5000,
+    categoryId: 'cat-inc-rent',
+    categoryName: 'Rent Collection',
+    categoryIcon: '🏠',
+    receivedById: 'user-ram',
+    contributedById: null,
+    date: '2026-09-10',
+    description: 'Collected rent from guest for 1-week study room sublet',
+    accountingTreatment: 'ROOM_FUND',
+    receiptUrl: null,
+    createdAt: '2026-09-10T14:30:00Z'
+  }
+];
+
 // Helper: Permanent Unique Room Code Generator (e.g. CM-7K4P9X)
 export const generateUniqueRoomCode = (existingRooms = []) => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -218,6 +277,17 @@ const removeStorageItem = (key) => {
   }
 };
 
+export const clearAllLocalStorage = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.clear();
+      console.log('✓ All local storage data cleared.');
+    }
+  } catch (e) {
+    console.warn('Storage clear error:', e);
+  }
+};
+
 const INITIAL_USER_ACCOUNTS = [
   { id: 'user-ram', fullName: 'Ram Sharma', email: 'ram@cashmate.app', mobile: '+977 9801234567', password: 'password123', assignedRoomId: 'room-ktm-1', role: 'admin' },
   { id: 'user-hari', fullName: 'Hari Thapa', email: 'hari@cashmate.app', mobile: '+977 9812345678', password: 'password123', assignedRoomId: 'room-ktm-1', role: 'member' },
@@ -251,11 +321,93 @@ const INITIAL_ROOMS = [
   }
 ];
 
+export const DEFAULT_ROOMS_DATA = {
+  'room-ktm-1': {
+    members: INITIAL_MEMBERS,
+    categories: INITIAL_CATEGORIES,
+    incomeCategories: INITIAL_INCOME_CATEGORIES,
+    incomes: INITIAL_INCOMES,
+    expenses: INITIAL_EXPENSES,
+    settlements: INITIAL_SETTLEMENTS,
+    closedMonths: [
+      {
+        id: 'closed-aug-2026',
+        monthName: 'August 2026',
+        closedDate: '2026-08-31',
+        totalExpenses: 38000,
+        totalIncome: 40000,
+        expenses: [
+          { id: 'exp-aug-1', title: 'August Rent', amount: 25000, paidBy: 'user-hari', date: '2026-08-01', categoryIcon: '🏠', categoryName: 'Rent', shares: { 'user-ram': 5000, 'user-hari': 5000, 'user-shyam': 5000, 'user-sita': 5000, 'user-gita': 5000 } },
+          { id: 'exp-aug-2', title: 'August Groceries', amount: 13000, paidBy: 'user-gita', date: '2026-08-15', categoryIcon: '🛒', categoryName: 'Grocery', shares: { 'user-ram': 2600, 'user-hari': 2600, 'user-shyam': 2600, 'user-sita': 2600, 'user-gita': 2600 } }
+        ],
+        settlements: [
+          { id: 'stl-aug-1', fromId: 'user-ram', toId: 'user-hari', amount: 5000, date: '2026-08-28', method: 'eSewa', status: 'Settled' }
+        ]
+      }
+    ]
+  },
+  'room-pkr-2': {
+    members: [
+      { id: 'user-ram', name: 'Ram Sharma', email: 'ram@cashmate.app', mobile: '+977 9801234567', avatar: '👦', role: 'admin', status: 'ACTIVE', joinedDate: '2026-09-01' },
+      { id: 'user-anita', name: 'Anita Shrestha', email: 'anita@cashmate.app', mobile: '+977 9856789012', avatar: '👩‍💼', role: 'member', status: 'ACTIVE', joinedDate: '2026-09-02' }
+    ],
+    categories: INITIAL_CATEGORIES,
+    incomeCategories: INITIAL_INCOME_CATEGORIES,
+    incomes: [],
+    expenses: [
+      {
+        id: 'exp-pkr-1',
+        title: 'Lakeside Flat Advance',
+        amount: 18000,
+        paidBy: 'user-ram',
+        date: '2026-09-02',
+        categoryId: 'cat-rent',
+        categoryName: 'Rent',
+        categoryIcon: '🏠',
+        description: 'Pokhara September Apartment Rent',
+        splitType: 'everyone',
+        participants: ['user-ram', 'user-anita'],
+        shares: {
+          'user-ram': 9000,
+          'user-anita': 9000
+        }
+      }
+    ],
+    settlements: [],
+    closedMonths: []
+  }
+};
+
 export const AppProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getStorageItem('cashmate_theme', 'light'));
   const [deviceFrame, setDeviceFrame] = useState('iphone');
   const [userRole, setUserRole] = useState(() => getStorageItem('cashmate_user_role', 'admin')); // 'admin' | 'member'
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTabState] = useState('home');
+  const [tabHistory, setTabHistory] = useState(['home']);
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(prev => {
+      const nextTab = typeof tab === 'function' ? tab(prev) : tab;
+      if (nextTab !== prev) {
+        setTabHistory(h => [...h.filter(t => t !== nextTab), nextTab]);
+      }
+      return nextTab;
+    });
+  };
+
+  const goBackTab = () => {
+    setTabHistory(prev => {
+      if (prev.length <= 1) {
+        setActiveTabState('home');
+        return ['home'];
+      }
+      const newHistory = [...prev];
+      newHistory.pop();
+      const previous = newHistory[newHistory.length - 1] || 'home';
+      setActiveTabState(previous);
+      return newHistory;
+    });
+  };
   const [authScreen, setAuthScreen] = useState(() => getStorageItem('cashmate_auth_screen', 'authenticated')); // Default to logged in session
 
   const [isLoading, setIsLoading] = useState(false);
@@ -274,63 +426,15 @@ export const AppProvider = ({ children }) => {
   const [pendingJoinRoom, setPendingJoinRoom] = useState(null);
   const [newlyCreatedRoom, setNewlyCreatedRoom] = useState(null);
 
-  const [roomsData, setRoomsData] = useState({
-    'room-ktm-1': {
-      members: INITIAL_MEMBERS,
-      categories: INITIAL_CATEGORIES,
-      expenses: INITIAL_EXPENSES,
-      settlements: INITIAL_SETTLEMENTS,
-      closedMonths: [
-        {
-          id: 'closed-aug-2026',
-          monthName: 'August 2026',
-          closedDate: '2026-08-31',
-          totalExpenses: 38000,
-          expenses: [
-            { id: 'exp-aug-1', title: 'August Rent', amount: 25000, paidBy: 'user-hari', date: '2026-08-01', categoryIcon: '🏠', categoryName: 'Rent', shares: { 'user-ram': 5000, 'user-hari': 5000, 'user-shyam': 5000, 'user-sita': 5000, 'user-gita': 5000 } },
-            { id: 'exp-aug-2', title: 'August Groceries', amount: 13000, paidBy: 'user-gita', date: '2026-08-15', categoryIcon: '🛒', categoryName: 'Grocery', shares: { 'user-ram': 2600, 'user-hari': 2600, 'user-shyam': 2600, 'user-sita': 2600, 'user-gita': 2600 } }
-          ],
-          settlements: [
-            { id: 'stl-aug-1', fromId: 'user-ram', toId: 'user-hari', amount: 5000, date: '2026-08-28', method: 'eSewa', status: 'Settled' }
-          ]
-        }
-      ]
-    },
-    'room-pkr-2': {
-      members: [
-        { id: 'user-ram', name: 'Ram Sharma', email: 'ram@cashmate.app', mobile: '+977 9801234567', avatar: '👦', role: 'admin', status: 'ACTIVE', joinedDate: '2026-09-01' },
-        { id: 'user-anita', name: 'Anita Shrestha', email: 'anita@cashmate.app', mobile: '+977 9856789012', avatar: '👩‍💼', role: 'member', status: 'ACTIVE', joinedDate: '2026-09-02' }
-      ],
-      categories: INITIAL_CATEGORIES,
-      expenses: [
-        {
-          id: 'exp-pkr-1',
-          title: 'Lakeside Flat Advance',
-          amount: 18000,
-          paidBy: 'user-ram',
-          date: '2026-09-02',
-          categoryId: 'cat-rent',
-          categoryName: 'Rent',
-          categoryIcon: '🏠',
-          description: 'Pokhara September Apartment Rent',
-          splitType: 'everyone',
-          participants: ['user-ram', 'user-anita'],
-          shares: {
-            'user-ram': 9000,
-            'user-anita': 9000
-          }
-        }
-      ],
-      settlements: [],
-      closedMonths: []
-    }
-  });
+  const [roomsData, setRoomsData] = useState(() => getStorageItem('cashmate_rooms_data', DEFAULT_ROOMS_DATA));
 
   const room = rooms.find(r => r.id === activeRoomId) || rooms[0];
 
   const currentRoomData = roomsData[activeRoomId] || {
     members: INITIAL_MEMBERS,
     categories: INITIAL_CATEGORIES,
+    incomeCategories: INITIAL_INCOME_CATEGORIES,
+    incomes: INITIAL_INCOMES,
     expenses: [],
     settlements: [],
     closedMonths: []
@@ -338,6 +442,8 @@ export const AppProvider = ({ children }) => {
 
   const members = currentRoomData.members || [];
   const categories = currentRoomData.categories || INITIAL_CATEGORIES;
+  const incomeCategories = currentRoomData.incomeCategories || INITIAL_INCOME_CATEGORIES;
+  const incomes = currentRoomData.incomes || [];
   const expenses = currentRoomData.expenses || [];
   const settlements = currentRoomData.settlements || [];
   const closedMonths = currentRoomData.closedMonths || [];
@@ -347,6 +453,8 @@ export const AppProvider = ({ children }) => {
       const existing = prev[activeRoomId] || {
         members: INITIAL_MEMBERS,
         categories: INITIAL_CATEGORIES,
+        incomeCategories: INITIAL_INCOME_CATEGORIES,
+        incomes: INITIAL_INCOMES,
         expenses: [],
         settlements: [],
         closedMonths: []
@@ -364,7 +472,19 @@ export const AppProvider = ({ children }) => {
 
   const setExpenses = (val) => {
     updateActiveRoomData(prev => ({
-      expenses: typeof val === 'function' ? val(prev.expenses) : val
+      expenses: typeof val === 'function' ? val(prev.expenses || []) : val
+    }));
+  };
+
+  const setIncomes = (val) => {
+    updateActiveRoomData(prev => ({
+      incomes: typeof val === 'function' ? val(prev.incomes || []) : val
+    }));
+  };
+
+  const setIncomeCategories = (val) => {
+    updateActiveRoomData(prev => ({
+      incomeCategories: typeof val === 'function' ? val(prev.incomeCategories || INITIAL_INCOME_CATEGORIES) : val
     }));
   };
 
@@ -434,6 +554,8 @@ export const AppProvider = ({ children }) => {
     const initialData = {
       members: [adminMemberProfile],
       categories: INITIAL_CATEGORIES,
+      incomeCategories: INITIAL_INCOME_CATEGORIES,
+      incomes: [],
       expenses: [],
       settlements: [],
       closedMonths: []
@@ -455,20 +577,40 @@ export const AppProvider = ({ children }) => {
     return newRoomObj;
   };
 
-  // Join Room using Permanent Room Code
+  // Join Room using Permanent Room Code with complete status verification
   const findRoomByCode = (code) => {
-    const cleanCode = code ? code.trim().toUpperCase() : '';
+    if (!code || !code.trim()) {
+      return { success: false, error: 'EMPTY_CODE', message: 'Please enter a Room Code.' };
+    }
+    const cleanCode = code.trim().toUpperCase();
     const found = rooms.find(r => r.code?.toUpperCase() === cleanCode);
-    if (!found) return null;
+    if (!found) {
+      return { success: false, error: 'NOT_FOUND', message: 'Invalid Room Code. Please check and try again.' };
+    }
+
+    if (found.status === 'SUSPENDED') {
+      return { success: false, error: 'SUSPENDED', message: 'This room is currently unavailable.' };
+    }
 
     const rData = roomsData[found.id] || { members: [] };
+    const isMemberAlready = rData.members.some(m => m.id === currentUser.id);
+    if (isMemberAlready) {
+      return { success: false, error: 'ALREADY_MEMBER', message: 'You are already a member of this room.' };
+    }
+
+    if (rData.members.length >= 50) {
+      return { success: false, error: 'ROOM_FULL', message: 'This room has reached its maximum member limit.' };
+    }
+
     const activeMemsCount = rData.members.filter(m => m.status === 'ACTIVE').length;
 
     return {
+      success: true,
       room: found,
       adminName: found.adminName || 'Room Admin',
       membersCount: activeMemsCount,
-      currency: found.currency || 'NPR (Rs.)'
+      currency: found.currency || 'NPR (Rs.)',
+      orgName: found.orgName || 'CashMate Shared Flat'
     };
   };
 
@@ -487,7 +629,15 @@ export const AppProvider = ({ children }) => {
     };
 
     setRoomsData(prev => {
-      const roomData = prev[foundRoom.id] || { members: [], categories: INITIAL_CATEGORIES, expenses: [], settlements: [], closedMonths: [] };
+      const roomData = prev[foundRoom.id] || {
+        members: [],
+        categories: INITIAL_CATEGORIES,
+        incomeCategories: INITIAL_INCOME_CATEGORIES,
+        incomes: [],
+        expenses: [],
+        settlements: [],
+        closedMonths: []
+      };
       const alreadyIn = roomData.members.some(m => m.id === currentUser.id);
       const updatedMems = alreadyIn
         ? roomData.members.map(m => m.id === currentUser.id ? { ...m, status: 'ACTIVE' } : m)
@@ -617,16 +767,27 @@ export const AppProvider = ({ children }) => {
 
     const matchedRoomId = account.assignedRoomId || 'room-ktm-1';
     const activeRoomData = roomsData[matchedRoomId] || { members: [] };
-    const memberProfile = activeRoomData.members.find(m => m.id === account.id) || {
-      id: account.id,
-      name: account.fullName,
-      email: account.email,
-      mobile: account.mobile,
-      avatar: account.role === 'admin' ? '👑' : '👦',
-      role: account.role,
-      status: 'ACTIVE',
-      joinedDate: '2026-08-15'
-    };
+    let memberProfile = activeRoomData.members?.find(m => m.id === account.id || m.email?.toLowerCase() === cleanEmail);
+    
+    if (!memberProfile) {
+      memberProfile = {
+        id: account.id,
+        name: account.fullName,
+        email: account.email,
+        mobile: account.mobile,
+        avatar: account.role === 'admin' ? '👑' : '👦',
+        role: account.role || 'member',
+        status: 'ACTIVE',
+        joinedDate: new Date().toISOString().split('T')[0]
+      };
+      setRoomsData(prev => ({
+        ...prev,
+        [matchedRoomId]: {
+          ...(prev[matchedRoomId] || {}),
+          members: [...((prev[matchedRoomId] && prev[matchedRoomId].members) || []), memberProfile]
+        }
+      }));
+    }
 
     setCurrentUser(memberProfile);
     setUserRole(account.role || 'member');
@@ -663,6 +824,30 @@ export const AppProvider = ({ children }) => {
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMemberDetailOpen, setIsMemberDetailOpen] = useState(null);
+
+  // Bilingual Language Support: 'en' (English) or 'ne' (नेपाली)
+  const [language, setLanguageState] = useState(() => {
+    return getStorageItem('cashmate_language', 'en');
+  });
+
+  const setLanguage = (lang) => {
+    const nextLang = lang === 'ne' ? 'ne' : 'en';
+    setLanguageState(nextLang);
+    setStorageItem('cashmate_language', nextLang);
+  };
+
+  const t = (key, params = {}) => {
+    const dict = translations[language] || translations.en;
+    let text = dict[key] ?? translations.en[key] ?? key;
+    if (typeof text === 'string') {
+      Object.entries(params).forEach(([k, v]) => {
+        text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+    return text;
+  };
+
+  const getCategoryName = (cat) => getTranslatedCategoryName(cat, language);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -707,9 +892,66 @@ export const AppProvider = ({ children }) => {
     showToast('Signed out of CashMate.', 'info');
   };
 
-  // Exact Accounting & Balance Calculation Logic
+  // Income Management State and Actions
+  const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
+
+  const addIncome = ({ title, amount, categoryId, categoryName, categoryIcon, receivedById, contributedById, date, description, accountingTreatment, receiptUrl }) => {
+    const numAmount = parseFloat(String(amount).replace(/,/g, ''));
+    if (!numAmount || numAmount <= 0 || isNaN(numAmount)) {
+      showToast('Please enter a valid positive income amount.', 'error');
+      return false;
+    }
+
+    const matchedCat = incomeCategories.find(c => c.id === categoryId);
+
+    const newIncome = {
+      id: `inc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: title ? title.trim() : 'Room Income',
+      amount: numAmount,
+      categoryId: categoryId || 'cat-inc-contrib',
+      categoryName: categoryName || matchedCat?.name || 'Member Contribution',
+      categoryIcon: categoryIcon || matchedCat?.icon || '🤝',
+      receivedById: receivedById || currentUser.id,
+      contributedById: contributedById || null,
+      date: date || new Date().toISOString().split('T')[0],
+      description: description ? description.trim() : '',
+      accountingTreatment: accountingTreatment || matchedCat?.accountingTreatment || 'MEMBER_CONTRIBUTION',
+      receiptUrl: receiptUrl || null,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.id
+    };
+
+    setIncomes(prev => [newIncome, ...(prev || [])]);
+    setIsAddIncomeOpen(false);
+    showToast(`✓ Income added: +Rs. ${numAmount.toLocaleString()}`);
+    return newIncome;
+  };
+
+  const deleteIncome = (incomeId) => {
+    setIncomes(prev => (prev || []).filter(i => i.id !== incomeId));
+    showToast('Income record removed.');
+  };
+
+  const editIncome = (incomeId, updatedData) => {
+    setIncomes(prev => (prev || []).map(i => i.id === incomeId ? { ...i, ...updatedData } : i));
+    showToast('Income updated successfully.');
+  };
+
+  const addIncomeCategory = ({ name, icon, accountingTreatment }) => {
+    const newCat = {
+      id: `cat-inc-${Date.now()}`,
+      name: name.trim(),
+      icon: icon || '💵',
+      accountingTreatment: accountingTreatment || 'GENERAL_INCOME',
+      status: 'ACTIVE'
+    };
+    setIncomeCategories(prev => [...(prev || []), newCat]);
+    showToast(`✓ Income category "${name}" added.`);
+    return newCat;
+  };
+
+  // Exact Financial Calculation Logic: Both Room Cash Balance & Member Settlement Balances
   const calculateBalances = () => {
-    const activeMembers = members.filter(m => m.status === 'ACTIVE');
     const balances = {};
 
     members.forEach(m => {
@@ -717,14 +959,19 @@ export const AppProvider = ({ children }) => {
         member: m,
         totalPaid: 0,
         totalShare: 0,
+        totalExpensesPaid: 0,
+        totalContributed: 0,
+        totalIncomeReceived: 0,
         netBalance: 0
       };
     });
 
+    // 1. Process Expenses
     expenses.forEach(exp => {
       const expAmount = Number(exp.amount) || 0;
       if (balances[exp.paidBy]) {
         balances[exp.paidBy].totalPaid += expAmount;
+        balances[exp.paidBy].totalExpensesPaid += expAmount;
       }
       if (exp.shares) {
         Object.entries(exp.shares).forEach(([mId, shareAmt]) => {
@@ -732,6 +979,52 @@ export const AppProvider = ({ children }) => {
             balances[mId].totalShare += Number(shareAmt) || 0;
           }
         });
+      } else if (exp.participants && exp.participants.length > 0) {
+        const perPerson = expAmount / exp.participants.length;
+        exp.participants.forEach(pId => {
+          if (balances[pId]) {
+            balances[pId].totalShare += perPerson;
+          }
+        });
+      }
+    });
+
+    // 2. Process Incomes
+    incomes.forEach(inc => {
+      const incAmt = Number(inc.amount) || 0;
+      if (inc.receivedById && balances[inc.receivedById]) {
+        balances[inc.receivedById].totalIncomeReceived += incAmt;
+      }
+
+      // Member Contribution accounting treatment
+      if (inc.accountingTreatment === 'MEMBER_CONTRIBUTION') {
+        if (inc.contributedById && inc.contributedById !== 'all') {
+          if (balances[inc.contributedById]) {
+            balances[inc.contributedById].totalContributed += incAmt;
+            balances[inc.contributedById].totalPaid += incAmt;
+          }
+        } else if ((!inc.contributedById || inc.contributedById === 'all') && members.length > 0) {
+          const share = incAmt / members.length;
+          members.forEach(m => {
+            if (balances[m.id]) {
+              balances[m.id].totalContributed += share;
+              balances[m.id].totalPaid += share;
+            }
+          });
+        }
+      }
+    });
+
+    // 3. Factor in completed debt settlements
+    settlements.forEach(stl => {
+      if (stl.status === 'Settled') {
+        const stlAmt = Number(stl.amount) || 0;
+        if (balances[stl.fromId]) {
+          balances[stl.fromId].totalPaid += stlAmt;
+        }
+        if (balances[stl.toId]) {
+          balances[stl.toId].totalPaid -= stlAmt;
+        }
       }
     });
 
@@ -739,6 +1032,9 @@ export const AppProvider = ({ children }) => {
       // Precise accounting rounding to 2 decimal places
       balances[mId].totalPaid = Math.round(balances[mId].totalPaid * 100) / 100;
       balances[mId].totalShare = Math.round(balances[mId].totalShare * 100) / 100;
+      balances[mId].totalExpensesPaid = Math.round(balances[mId].totalExpensesPaid * 100) / 100;
+      balances[mId].totalContributed = Math.round(balances[mId].totalContributed * 100) / 100;
+      balances[mId].totalIncomeReceived = Math.round(balances[mId].totalIncomeReceived * 100) / 100;
       balances[mId].netBalance = Math.round((balances[mId].totalPaid - balances[mId].totalShare) * 100) / 100;
     });
 
@@ -746,6 +1042,48 @@ export const AppProvider = ({ children }) => {
   };
 
   const balances = calculateBalances();
+
+  // Dual Financial Summaries: Room Cash Balance & Total Transactions
+  const totalRoomIncome = incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const totalRoomExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const roomCashBalance = totalRoomIncome - totalRoomExpenses;
+  const totalTransactionsCount = incomes.length + expenses.length;
+
+  // Combined Unified Transaction List Getter
+  const getAllTransactions = (filterType = 'all', dateRange = 'all') => {
+    let combined = [
+      ...expenses.map(e => ({ ...e, type: 'expense' })),
+      ...incomes.map(i => ({ ...i, type: 'income' }))
+    ];
+
+    if (filterType === 'income') {
+      combined = combined.filter(t => t.type === 'income');
+    } else if (filterType === 'expense') {
+      combined = combined.filter(t => t.type === 'expense');
+    }
+
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      if (dateRange === 'today') {
+        combined = combined.filter(t => t.date === todayStr);
+      } else if (dateRange === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        combined = combined.filter(t => new Date(t.date) >= weekAgo);
+      } else if (dateRange === 'month') {
+        const currentYearMonth = todayStr.substring(0, 7);
+        combined = combined.filter(t => t.date?.startsWith(currentYearMonth));
+      } else if (dateRange === 'last_month') {
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthStr = lastMonthDate.toISOString().substring(0, 7);
+        combined = combined.filter(t => t.date?.startsWith(lastMonthStr));
+      }
+    }
+
+    combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return combined;
+  };
 
   const getOptimizedSettlements = () => {
     const debtors = [];
@@ -891,6 +1229,11 @@ export const AppProvider = ({ children }) => {
     ]);
   };
 
+  const deleteSettlement = (stlId) => {
+    setSettlements(prev => prev.filter(s => s.id !== stlId));
+    showToast(t('delete') + ' ✓', 'info');
+  };
+
   const addCategory = (categoryData) => {
     const newCat = {
       id: `cat-${Date.now()}`,
@@ -899,6 +1242,24 @@ export const AppProvider = ({ children }) => {
     };
     setCategories(prev => [...prev, newCat]);
     showToast(`Category "${categoryData.name}" added.`);
+  };
+
+  const clearAllData = () => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.clear();
+      }
+    } catch (e) {
+      console.warn('Storage clear error:', e);
+    }
+    setRoomsData(DEFAULT_ROOMS_DATA);
+    setRooms(INITIAL_ROOMS);
+    setUserAccounts(INITIAL_USER_ACCOUNTS);
+    setCurrentUser(INITIAL_MEMBERS[0]);
+    setUserRole('admin');
+    setActiveRoomId('room-ktm-1');
+    setAuthScreen('authenticated');
+    showToast('✓ All local storage data has been cleaned and reset to defaults.');
   };
 
   const setTheme = (t) => {
@@ -938,6 +1299,8 @@ export const AppProvider = ({ children }) => {
         setUserRole,
         activeTab,
         setActiveTab,
+        goBackTab,
+        tabHistory,
         authScreen,
         setAuthScreen,
         isLoading,
@@ -998,7 +1361,29 @@ export const AppProvider = ({ children }) => {
         isNotificationsOpen,
         setIsNotificationsOpen,
         isMemberDetailOpen,
-        setIsMemberDetailOpen
+        setIsMemberDetailOpen,
+        language,
+        setLanguage,
+        t,
+        getCategoryName,
+        deleteSettlement,
+        incomes,
+        setIncomes,
+        incomeCategories,
+        setIncomeCategories,
+        addIncome,
+        editIncome,
+        deleteIncome,
+        addIncomeCategory,
+        isAddIncomeOpen,
+        setIsAddIncomeOpen,
+        totalRoomIncome,
+        totalRoomExpenses,
+        roomCashBalance,
+        totalTransactionsCount,
+        getAllTransactions,
+        clearAllData,
+        clearAllLocalStorage
       }}
     >
       {children}

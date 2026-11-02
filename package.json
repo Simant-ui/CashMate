@@ -14,18 +14,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^57.0.16",
-    "expo": "^57.0.24",
-    "expo-print": "~57.0.2",
-    "expo-sharing": "~57.0.21",
-    "expo-status-bar": "^57.0.1",
+    "@expo/metro-runtime": "~58.0.16",
+    "expo": "^58.0.0",
+    "expo-print": "~58.0.8",
+    "expo-sharing": "~58.0.21",
+    "expo-status-bar": "~58.0.4",
     "lucide-react": "^1.47.0",
     "lucide-react-native": "^1.47.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-svg": "15.15.4",
-    "react-native-web": "^0.21.2"
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-svg": "15.16.0",
+    "react-native-web": "^0.21.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

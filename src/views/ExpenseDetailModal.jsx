@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Button } from '../components/ui/Button';
+import { SwipeBackWrapper } from '../components/SwipeBackWrapper';
 import { X, Trash2, Info } from 'lucide-react-native';
 
 export const ExpenseDetailModal = () => {
@@ -12,6 +14,8 @@ export const ExpenseDetailModal = () => {
     userRole,
     members,
     deleteExpense,
+    t,
+    getCategoryName,
     colors
   } = useApp();
 
@@ -20,54 +24,60 @@ export const ExpenseDetailModal = () => {
   if (!selectedExpense) return null;
 
   const paidByMember = members.find(m => m.id === selectedExpense.paidBy);
-  const canModify = userRole === 'admin' || selectedExpense.paidBy === currentUser.id;
+  const canModify = userRole === 'admin' || selectedExpense.paidBy === currentUser?.id;
+  const categoryDisplayName = getCategoryName ? getCategoryName(selectedExpense.categoryName) : selectedExpense.categoryName;
 
   return (
     <>
       <Modal visible={!!selectedExpense} transparent animationType="slide" onRequestClose={() => setSelectedExpense(null)}>
-        <View style={styles.overlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
+        <SwipeBackWrapper onSwipeBack={() => setSelectedExpense(null)} style={{ flex: 1 }}>
+          <View style={styles.overlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.bgSurface }]}>
             {/* Header */}
             <View style={styles.modalHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
                 <Text style={{ fontSize: 28 }}>{selectedExpense.categoryIcon}</Text>
-                <View>
+                <View style={{ flex: 1 }}>
                   <View style={[styles.badge, { backgroundColor: colors.secondaryLight }]}>
-                    <Text style={[styles.badgeText, { color: colors.secondary }]}>{selectedExpense.categoryName}</Text>
+                    <Text style={[styles.badgeText, { color: colors.secondary }]}>{categoryDisplayName}</Text>
                   </View>
-                  <Text style={[styles.modalTitle, { color: colors.textMain }]}>{selectedExpense.title}</Text>
+                  <Text style={[styles.modalTitle, { color: colors.textMain }]} numberOfLines={1}>{selectedExpense.title}</Text>
                 </View>
               </View>
 
-              <TouchableOpacity onPress={() => setSelectedExpense(null)}>
+              <TouchableOpacity
+                onPress={() => setSelectedExpense(null)}
+                style={styles.closeIconBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <X size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
               {/* Hero Banner */}
               <View style={[styles.heroBanner, { backgroundColor: colors.bgSubtle }]}>
-                <Text style={[styles.heroLabel, { color: colors.textMuted }]}>TOTAL EXPENSE AMOUNT</Text>
+                <Text style={[styles.heroLabel, { color: colors.textMuted }]}>{t('totalAmount') || 'TOTAL EXPENSE AMOUNT'}</Text>
                 <Text style={[styles.heroAmount, { color: colors.textMain }]}>
-                  Rs. {selectedExpense.amount.toLocaleString()}
+                  Rs. {selectedExpense.amount?.toLocaleString()}
                 </Text>
                 <Text style={[styles.heroSub, { color: colors.textMuted }]}>
-                  Paid by {paidByMember?.name || 'Unknown'} on {selectedExpense.date}
+                  {t('paidBy')}: {paidByMember?.name || 'Unknown'} • {selectedExpense.date}
                 </Text>
               </View>
 
               {/* Description */}
               {selectedExpense.description ? (
                 <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-                  <Text style={[styles.cardLabel, { color: colors.textMuted }]}>NOTE / DESCRIPTION</Text>
+                  <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{t('description') || 'NOTE / DESCRIPTION'}</Text>
                   <Text style={[styles.cardText, { color: colors.textMain }]}>{selectedExpense.description}</Text>
                 </View>
               ) : null}
 
               {/* Participant Share Breakdown */}
-              <View style={{ marginBottom: 20 }}>
+              <View style={{ marginBottom: 16 }}>
                 <Text style={[styles.sectionTitle, { color: colors.textMain }]}>
-                  Split Breakdown ({selectedExpense.participants?.length || 5} Participants)
+                  {t('splitDetails')} ({selectedExpense.participants?.length || members.length} {t('members')})
                 </Text>
 
                 <View style={{ gap: 8 }}>
@@ -79,10 +89,10 @@ export const ExpenseDetailModal = () => {
 
                     return (
                       <View key={m.id} style={[styles.memberShareRow, { backgroundColor: colors.bgSubtle }]}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                           <Text style={{ fontSize: 16 }}>{m.avatar}</Text>
-                          <Text style={[styles.memberName, { color: colors.textMain }]}>
-                            {m.name} {m.id === currentUser.id ? '(You)' : ''}
+                          <Text style={[styles.memberName, { color: colors.textMain }]} numberOfLines={1}>
+                            {m.name} {m.id === currentUser?.id ? `(${t('you')})` : ''}
                           </Text>
                           {isPayer && (
                             <View style={[styles.paidBadge, { backgroundColor: colors.positiveLight }]}>
@@ -104,20 +114,31 @@ export const ExpenseDetailModal = () => {
               <View style={[styles.infoBanner, { backgroundColor: colors.primaryLight }]}>
                 <Info size={16} color={colors.primary} />
                 <Text style={[styles.infoText, { color: colors.primary }]}>
-                  {paidByMember?.name} paid Rs. {selectedExpense.amount.toLocaleString()}. Each participant owes {paidByMember?.name} their share.
+                  {paidByMember?.name} paid Rs. {selectedExpense.amount?.toLocaleString()}. Each participant owes {paidByMember?.name} their share.
                 </Text>
               </View>
 
-              {/* Action Buttons */}
-              {canModify ? (
-                <TouchableOpacity
-                  style={[styles.deleteBtn, { backgroundColor: colors.negative }]}
-                  onPress={() => setIsConfirmDeleteOpen(true)}
-                >
-                  <Trash2 size={16} color="#ffffff" />
-                  <Text style={styles.deleteBtnText}>Delete Expense</Text>
-                </TouchableOpacity>
-              ) : (
+              {/* Action Buttons Row */}
+              <View style={styles.actionRow}>
+                <Button
+                  label={t('close')}
+                  variant="outline"
+                  onPress={() => setSelectedExpense(null)}
+                  style={{ flex: 1 }}
+                />
+
+                {canModify && (
+                  <Button
+                    label={t('delete')}
+                    variant="danger"
+                    icon={<Trash2 size={16} color="#ffffff" />}
+                    onPress={() => setIsConfirmDeleteOpen(true)}
+                    style={{ flex: 1 }}
+                  />
+                )}
+              </View>
+
+              {!canModify && (
                 <Text style={[styles.lockText, { color: colors.textMuted }]}>
                   🔒 Only Admin or expense creator ({paidByMember?.name}) can modify this expense.
                 </Text>
@@ -125,15 +146,16 @@ export const ExpenseDetailModal = () => {
             </ScrollView>
           </View>
         </View>
-      </Modal>
+      </SwipeBackWrapper>
+    </Modal>
 
       <ConfirmModal
         isOpen={isConfirmDeleteOpen}
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={() => deleteExpense(selectedExpense.id)}
-        title="Delete Expense?"
+        title={t('deleteExpense')}
         description={`Are you sure you want to delete "${selectedExpense.title}"? This will automatically update all room balances.`}
-        confirmText="Delete"
+        confirmText={t('delete')}
         confirmVariant="danger"
       />
     </>
@@ -156,16 +178,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 16
+  },
+  closeIconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18
   },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 9999,
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
+    marginBottom: 2
   },
   badgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700'
   },
   modalTitle: {
@@ -180,7 +210,8 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 11,
-    fontWeight: '700'
+    fontWeight: '700',
+    letterSpacing: 0.5
   },
   heroAmount: {
     fontSize: 32,
@@ -202,7 +233,8 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   cardText: {
-    fontSize: 13
+    fontSize: 13,
+    lineHeight: 18
   },
   sectionTitle: {
     fontSize: 14,
@@ -239,28 +271,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 20
+    marginBottom: 16
   },
   infoText: {
     fontSize: 12,
     fontWeight: '600',
-    flex: 1
+    flex: 1,
+    lineHeight: 16
   },
-  deleteBtn: {
-    paddingVertical: 12,
-    borderRadius: 14,
+  actionRow: {
     flexDirection: 'row',
+    gap: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8
-  },
-  deleteBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '700'
+    marginTop: 8
   },
   lockText: {
     textAlign: 'center',
-    fontSize: 11
+    fontSize: 11,
+    marginTop: 10
   }
 });

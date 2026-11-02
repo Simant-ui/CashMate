@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { Home, Receipt, HandCoins, BarChart3, User, Plus } from 'lucide-react-native';
 
 export const BottomNav = () => {
-  const { activeTab, setActiveTab, setIsAddExpenseOpen, optimizedSettlements, colors } = useApp();
+  const { activeTab, setActiveTab, setIsAddExpenseOpen, optimizedSettlements, t, colors } = useApp();
 
   const pendingCount = optimizedSettlements.length;
 
@@ -16,7 +16,7 @@ export const BottomNav = () => {
       >
         <Home size={20} color={activeTab === 'home' ? colors.primary : colors.textMuted} />
         <Text style={[styles.navText, { color: activeTab === 'home' ? colors.primary : colors.textMuted }]}>
-          Home
+          {t('navHome')}
         </Text>
       </TouchableOpacity>
 
@@ -26,7 +26,7 @@ export const BottomNav = () => {
       >
         <Receipt size={20} color={activeTab === 'expenses' ? colors.primary : colors.textMuted} />
         <Text style={[styles.navText, { color: activeTab === 'expenses' ? colors.primary : colors.textMuted }]}>
-          Expenses
+          {t('navExpenses')}
         </Text>
       </TouchableOpacity>
 
@@ -50,7 +50,7 @@ export const BottomNav = () => {
           )}
         </View>
         <Text style={[styles.navText, { color: activeTab === 'settlements' ? colors.primary : colors.textMuted }]}>
-          Settle
+          {t('navSettle')}
         </Text>
       </TouchableOpacity>
 
@@ -60,7 +60,7 @@ export const BottomNav = () => {
       >
         <BarChart3 size={20} color={activeTab === 'reports' ? colors.primary : colors.textMuted} />
         <Text style={[styles.navText, { color: activeTab === 'reports' ? colors.primary : colors.textMuted }]}>
-          Reports
+          {t('navReports')}
         </Text>
       </TouchableOpacity>
 
@@ -70,7 +70,7 @@ export const BottomNav = () => {
       >
         <User size={20} color={activeTab === 'profile' ? colors.primary : colors.textMuted} />
         <Text style={[styles.navText, { color: activeTab === 'profile' ? colors.primary : colors.textMuted }]}>
-          Profile
+          {t('navProfile')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
-    paddingVertical: 4
+    paddingVertical: 4,
+    minWidth: 50
   },
   navText: {
     fontSize: 10,

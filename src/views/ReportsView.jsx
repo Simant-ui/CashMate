@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet, Share } from 'react-native';
 import { useApp } from '../context/AppContext';
+import { Button } from '../components/ui/Button';
 import { Download, Share2, PieChart, BarChart, Calendar, Globe } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -18,6 +19,9 @@ export const ReportsView = () => {
     setCalendarSystem,
     convertADtoBS,
     showToast,
+    language,
+    t,
+    getCategoryName,
     colors
   } = useApp();
 
@@ -260,20 +264,20 @@ export const ReportsView = () => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <View>
-          <Text style={[styles.title, { color: colors.textMain }]}>Reports & Analytics</Text>
-          <Text style={[styles.subTitle, { color: colors.textMuted }]}>
-            Financial breakdown & custom date analytics
+        <View style={{ flex: 1, paddingRight: 8 }}>
+          <Text style={[styles.title, { color: colors.textMain }]} numberOfLines={1}>{t('reports') || 'Reports & Analytics'}</Text>
+          <Text style={[styles.subTitle, { color: colors.textMuted }]} numberOfLines={1}>
+            {language === 'ne' ? 'वित्तीय विवरण र मिति अनुसारको विश्लेषण' : 'Financial breakdown & custom date analytics'}
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.pdfBtn, { backgroundColor: colors.primary }]}
+        <Button
+          label={t('exportPdf') || 'Export PDF'}
+          variant="primary"
+          size="sm"
+          icon={<Download size={14} color="#ffffff" />}
           onPress={handleGeneratePDF}
-        >
-          <Download size={14} color="#ffffff" />
-          <Text style={styles.pdfBtnText}>Export PDF</Text>
-        </TouchableOpacity>
+        />
       </View>
 
       {/* Calendar Format Switcher (AD English vs BS Bikram Sambat) */}
@@ -312,22 +316,26 @@ export const ReportsView = () => {
 
       {/* Timeframe Filter Switcher */}
       <View style={[styles.tabBar, { backgroundColor: colors.bgSubtle }]}>
-        {['this_month', 'last_month', 'custom'].map(t => (
+        {[
+          { id: 'this_month', label: language === 'ne' ? 'यो महिना' : 'This Month' },
+          { id: 'last_month', label: language === 'ne' ? 'अघिल्लो महिना' : 'Last Month' },
+          { id: 'custom', label: language === 'ne' ? 'कस्टम मिति' : 'Custom Range' }
+        ].map(tb => (
           <TouchableOpacity
-            key={t}
-            onPress={() => setTimeframe(t)}
+            key={tb.id}
+            onPress={() => setTimeframe(tb.id)}
             style={[
               styles.tabBtn,
-              timeframe === t && { backgroundColor: colors.bgSurface }
+              timeframe === tb.id && { backgroundColor: colors.bgSurface }
             ]}
           >
             <Text
               style={[
                 styles.tabBtnText,
-                { color: timeframe === t ? colors.primary : colors.textMuted }
+                { color: timeframe === tb.id ? colors.primary : colors.textMuted }
               ]}
             >
-              {t === 'this_month' ? 'This Month' : t === 'last_month' ? 'Last Month' : 'Custom Range'}
+              {tb.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -393,7 +401,7 @@ export const ReportsView = () => {
 
           <View style={styles.datePickerGrid}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.dateLabel, { color: colors.textMuted }]}>📅 From Date (Kati dekhi)</Text>
+              <Text style={[styles.dateLabel, { color: colors.textMuted }]}>📅 From Date ( From)</Text>
               <TextInput
                 style={[styles.dateInput, { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }]}
                 value={fromDate}
@@ -406,7 +414,7 @@ export const ReportsView = () => {
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={[styles.dateLabel, { color: colors.textMuted }]}>📅 To Date (Kati samma)</Text>
+              <Text style={[styles.dateLabel, { color: colors.textMuted }]}>📅 To Date (TO)</Text>
               <TextInput
                 style={[styles.dateInput, { color: colors.textMain, borderColor: colors.border, backgroundColor: colors.bgSubtle }]}
                 value={toDate}
@@ -581,13 +589,13 @@ export const ReportsView = () => {
           <Text style={[styles.metricSub, { color: colors.textMuted }]}>Export PDF report in {calendarSystem === 'BS' ? 'Nepali B.S.' : 'English A.D.'}.</Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+        <Button
+          label="Share PDF"
+          variant="primary"
+          size="sm"
+          icon={<Share2 size={14} color="#ffffff" />}
           onPress={handleShareReport}
-        >
-          <Share2 size={14} color="#ffffff" />
-          <Text style={styles.shareBtnText}>Share PDF</Text>
-        </TouchableOpacity>
+        />
       </View>
     </ScrollView>
   );
